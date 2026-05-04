@@ -1,0 +1,19 @@
+{
+  "name": "Run & Calisthenics Tracker",
+  "short_name": "Progress Log",
+  "description": "Track your weekly run and calisthenics training program",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#e8ff6b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
