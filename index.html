@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Progress Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0f0f0f;color:#eee;font-family:'Space Mono',monospace;padding-bottom:80px;}
+  input,textarea,button{font-family:'Space Mono',monospace;}
+  input::placeholder,textarea::placeholder{color:#555;}
+  input:focus,textarea:focus{outline:none;border-color:rgba(232,255,107,0.4)!important;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+
+#header{background:#111;border-bottom:1px solid #1e1e1e;padding:18px 16px 12px;position:sticky;top:0;z-index:10;}
+.title-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.app-title{font-family:‘Bebas Neue’,sans-serif;font-size:28px;color:#e8ff6b;letter-spacing:3px;line-height:1;}
+.app-sub{font-size:10px;color:#555;letter-spacing:2px;margin-top:3px;}
+.week-row{display:flex;align-items:center;gap:8px;}
+.week-label{font-size:11px;color:#555;}
+.week-num{font-family:‘Bebas Neue’,sans-serif;font-size:22px;color:#e8ff6b;min-width:24px;text-align:center;}
+.btn-week{background:rgba(255,255,255,0.07);border:none;color:#aaa;border-radius:6px;padding:3px 12px;cursor:pointer;font-size:16px;}
+.meta-row{display:flex;gap:12px;justify-content:flex-end;margin-top:5px;align-items:center;}
+.save-dot{width:6px;height:6px;border-radius:3px;background:#333;display:inline-block;margin-right:4px;transition:background 0.4s;}
+.save-dot.on{background:#e8ff6b;}
+.save-label{font-size:10px;color:#444;letter-spacing:1px;transition:color 0.4s;}
+.save-label.on{color:#e8ff6b;}
+.days-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;}
+.day-tab{border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;letter-spacing:1px;white-space:nowrap;font-family:‘Space Mono’,monospace;transition:all 0.15s;background:rgba(255,255,255,0.06);color:#666;}
+.day-tab.active{background:#e8ff6b;color:#111;font-weight:700;}
+.day-tab.done{background:rgba(232,255,107,0.12);color:#e8ff6b;}
+
+#main{max-width:700px;margin:20px auto;padding:0 14px;}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px;margin-bottom:16px;}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.day-name{font-size:18px;color:#e8ff6b;letter-spacing:1px;}
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle-lbl{font-size:11px;color:#aaa;letter-spacing:1px;text-transform:uppercase;}
+.toggle{width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.toggle.on{background:#e8ff6b;}
+.toggle-knob{width:14px;height:14px;border-radius:7px;background:#555;position:absolute;top:3px;left:3px;transition:all 0.2s;}
+.toggle.on .toggle-knob{left:19px;background:#111;}
+
+.run-box{background:rgba(232,255,107,0.06);border-left:3px solid #e8ff6b;border-radius:8px;padding:12px;margin-bottom:14px;}
+.run-type{font-size:11px;color:#e8ff6b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.run-note{font-size:12px;color:#777;margin-bottom:10px;line-height:1.5;}
+.run-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+.section-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.field-label{display:block;font-size:10px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.field-input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#eee;padding:6px 8px;font-size:13px;width:100%;}
+
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;}
+th{text-align:left;padding:6px 6px;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.08);}
+td{padding:7px 6px;vertical-align:middle;border-bottom:1px solid rgba(255,255,255,0.04);}
+.ex-name{font-weight:700;color:#ddd;margin-bottom:2px;}
+.ex-hint{font-size:10px;color:#555;}
+.ex-target{color:#777;font-size:11px;}
+td input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:#eee;padding:4px 6px;font-size:12px;width:100%;}
+
+.feel-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.chip{border:none;border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;transition:all 0.15s;font-family:‘Space Mono’,monospace;background:rgba(255,255,255,0.07);color:#777;}
+.chip.sel-feel{background:#e8ff6b;color:#111;}
+.chip.sel-none{background:#e8ff6b;color:#111;}
+.chip.sel-mild{background:#ffd966;color:#111;}
+.chip.sel-mod{background:#ff9966;color:#111;}
+.chip.sel-sev{background:#ff6666;color:#111;}
+
+textarea.notes-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#eee;padding:8px;font-size:12px;width:100%;min-height:56px;resize:vertical;line-height:1.5;}
+.rest-msg{color:#555;font-style:italic;}
+
+.checkin-box{padding:18px;background:rgba(232,255,107,0.03);border:1px solid rgba(232,255,107,0.12);border-radius:12px;margin-bottom:16px;}
+.checkin-title{font-size:13px;color:#e8ff6b;font-weight:700;letter-spacing:1px;margin-bottom:4px;}
+.checkin-desc{font-size:11px;color:#555;line-height:1.7;margin-bottom:14px;}
+.checkin-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-preview{padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#888;cursor:pointer;font-size:11px;letter-spacing:1px;}
+.btn-claude{padding:12px;border-radius:8px;border:none;background:#e8ff6b;color:#111;cursor:pointer;font-size:11px;letter-spacing:1px;font-weight:700;}
+#summary-wrap{margin-top:12px;display:none;}
+#summary-wrap.show{display:block;}
+#summary-text{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#aaa;padding:10px;font-size:10px;width:100%;min-height:220px;resize:vertical;line-height:1.7;}
+.btn-copy{margin-top:8px;width:100%;padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#777;cursor:pointer;font-size:11px;letter-spacing:1px;transition:all 0.2s;}
+.btn-copy.copied{background:rgba(232,255,107,0.15);color:#e8ff6b;}
+
+.glance-box{padding:14px;background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid rgba(255,255,255,0.05);margin-bottom:14px;}
+.glance-title{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;}
+.glance-row{display:flex;gap:12px;margin-bottom:7px;font-size:11px;}
+.glance-day{color:#e8ff6b;width:32px;flex-shrink:0;}
+.glance-info{color:#555;}
+
+.clear-btn{display:block;width:100%;background:none;border:none;color:#222;font-size:10px;cursor:pointer;text-decoration:underline;letter-spacing:1px;margin-top:12px;text-align:center;}
+</style>
+
+</head>
+<body>
+
+<div id="header">
+  <div class="title-row">
+    <div>
+      <div class="app-title">PROGRESS LOG</div>
+      <div class="app-sub">RUN + CALISTHENICS</div>
+    </div>
+    <div>
+      <div class="week-row">
+        <span class="week-label">WEEK</span>
+        <button class="btn-week" onclick="changeWeek(-1)">-</button>
+        <span class="week-num" id="week-display">1</span>
+        <button class="btn-week" onclick="changeWeek(1)">+</button>
+      </div>
+      <div class="meta-row">
+        <span><span class="save-dot" id="save-dot"></span><span class="save-label" id="save-label">SAVED</span></span>
+        <span style="font-size:10px;color:#333;" id="done-count">0/6 DONE</span>
+      </div>
+    </div>
+  </div>
+  <div class="days-tabs" id="days-tabs"></div>
+</div>
+
+<div id="main"></div>
+
+<script>
+const PLAN = {
+  Monday: {
+    run: { type: "Push Run", distance: 1.5, notes: "Comfortably hard pace. Can say a few words but not hold a conversation. This is your benchmark run." },
+    workout: { name: "PUSH + CORE", exercises: [
+      { name: "Standard Push-Ups", sets: 3, reps: "Max", note: "Full range, chest to floor" },
+      { name: "Wide Push-Ups", sets: 3, reps: "Max", note: "Targets chest/outer pec" },
+      { name: "Diamond Push-Ups", sets: 3, reps: "Max", note: "Tricep focus" },
+      { name: "Pike Push-Ups", sets: 3, reps: "Max", note: "Shoulder focus" },
+      { name: "Bench/Park Dips", sets: 3, reps: "Max", note: "Triceps - lean slightly forward" },
+      { name: "Plank Hold", sets: 3, reps: "30-60s", note: "Squeeze everything" },
+      { name: "Hollow Body Hold", sets: 3, reps: "20-30s", note: "Lower back to floor, legs out" },
+    ]}
+  },
+  Tuesday: {
+    run: null,
+    workout: { name: "PULL + BICEPS", exercises: [
+      { name: "Assisted Pull-Ups (Machine)", sets: 4, reps: "6-10", note: "Full range - dead hang to chin over bar" },
+      { name: "Assisted Chin-Ups (Machine)", sets: 3, reps: "6-10", note: "Supinated grip - more bicep" },
+      { name: "Dumbbell Curl (accessory)", sets: 3, reps: "10-12", note: "Slow negative - 3 seconds down" },
+      { name: "Hammer Curl (accessory)", sets: 3, reps: "10-12", note: "Brachialis - adds arm thickness" },
+      { name: "Dead Hang", sets: 3, reps: "Max time", note: "Grip + shoulder health" },
+    ]}
+  },
+  Wednesday: {
+    run: { type: "Recovery Run", distance: 1.25, notes: "Genuinely slow - embarrassingly slow. Nasal breathing if possible. This is NOT a step back, it's the plan." },
+    workout: { name: "CORE ONLY", exercises: [
+      { name: "Plank Hold", sets: 3, reps: "45-60s", note: "" },
+      { name: "Hollow Body Hold", sets: 3, reps: "30s", note: "" },
+      { name: "Dead Bug", sets: 3, reps: "10 each side", note: "Slow and controlled" },
+      { name: "Leg Raises", sets: 3, reps: "10-15", note: "Keep lower back pressed down" },
+    ]}
+  },
+  Thursday: {
+    run: null,
+    workout: { name: "PULL + PUSH (pull first)", exercises: [
+      { name: "Assisted Pull-Ups (Machine)", sets: 3, reps: "6-10", note: "Pull first while fresh" },
+      { name: "Assisted Chin-Ups (Machine)", sets: 3, reps: "6-10", note: "Supinated grip" },
+      { name: "Standard Push-Ups", sets: 3, reps: "Max", note: "" },
+      { name: "Decline Push-Ups", sets: 3, reps: "Max", note: "Feet elevated - upper chest" },
+      { name: "Bench/Park Dips", sets: 3, reps: "Max", note: "" },
+      { name: "Plank Hold", sets: 2, reps: "45s", note: "" },
+    ]}
+  },
+  Friday: {
+    run: { type: "Distance Run", distance: 1.5, notes: "Same as Monday. Goal is for this to feel easier than Monday did. Friday is the first to bump when you progress." },
+    workout: { name: "CORE ONLY", exercises: [
+      { name: "Plank Hold", sets: 3, reps: "45-60s", note: "" },
+      { name: "Side Plank", sets: 3, reps: "30s each", note: "Obliques" },
+      { name: "Hollow Body Hold", sets: 3, reps: "30s", note: "" },
+      { name: "Leg Raises", sets: 3, reps: "10-15", note: "" },
+    ]}
+  },
+  Saturday: {
+    run: null,
+    workout: { name: "LEGS", exercises: [
+      { name: "Bodyweight Squats", sets: 3, reps: "15-20", note: "Full depth, knees track over toes" },
+      { name: "Reverse Lunges", sets: 3, reps: "10 each leg", note: "Step back - easier on knees than forward lunge" },
+      { name: "Glute Bridges", sets: 3, reps: "15-20", note: "Squeeze at the top, hold 1 second" },
+      { name: "Wall Sit", sets: 3, reps: "30-45s", note: "Thighs parallel to floor" },
+      { name: "Calf Raises", sets: 3, reps: "20", note: "Slow - helps running and ankle stability" },
+    ]}
+  },
+  Sunday: { run: null, workout: null, rest: true }
+};
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const PAIN_LEVELS = ["None","Mild","Moderate","Severe"];
+const FEELINGS = ["Great","Good","Average","Tired","Awful"];
+const GLANCE = {
+  Monday: "Run 1.5mi (Push) + Push + Core",
+  Tuesday: "Pull + Biceps",
+  Wednesday: "Run 1.25mi (Recovery) + Core",
+  Thursday: "Pull + Push",
+  Friday: "Run 1.5mi (Distance) + Core",
+  Saturday: "Legs",
+  Sunday: "Rest"
+};
+
+let weekNum = 1;
+let weekData = {};
+let activeDay = "Monday";
+let saveTimer = null;
+let summaryVisible = false;
+
+function load() {
+  try { weekNum = parseInt(localStorage.getItem("ft_week") || "1"); } catch(e) {}
+  loadWeekData();
+  renderTabs();
+  renderMain();
+  updateMeta();
+}
+
+function loadWeekData() {
+  try {
+    const raw = localStorage.getItem("ft_data_" + weekNum);
+    weekData = raw ? JSON.parse(raw) : {};
+  } catch(e) { weekData = {}; }
+}
+
+function save() {
+  setSaveState(false);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem("ft_data_" + weekNum, JSON.stringify(weekData));
+      localStorage.setItem("ft_week", String(weekNum));
+      setSaveState(true);
+    } catch(e) {}
+  }, 500);
+}
+
+function setSaveState(saved) {
+  const dot = document.getElementById("save-dot");
+  const lbl = document.getElementById("save-label");
+  if (!dot) return;
+  if (saved) { dot.classList.add("on"); lbl.classList.add("on"); lbl.textContent = "SAVED"; }
+  else { dot.classList.remove("on"); lbl.classList.remove("on"); lbl.textContent = "SAVING..."; }
+}
+
+function updateMeta() {
+  document.getElementById("week-display").textContent = weekNum;
+  const done = DAYS.filter(d => !PLAN[d].rest && weekData[d] && weekData[d].completed).length;
+  document.getElementById("done-count").textContent = done + "/6 DONE";
+}
+
+function changeWeek(delta) {
+  weekNum = Math.max(1, weekNum + delta);
+  loadWeekData();
+  renderTabs();
+  renderMain();
+  updateMeta();
+  setSaveState(true);
+}
+
+function setDay(day) {
+  activeDay = day;
+  renderTabs();
+  renderMain();
+}
+
+function getDay() { return weekData[activeDay] || {}; }
+function setField(field, val) {
+  if (!weekData[activeDay]) weekData[activeDay] = {};
+  weekData[activeDay][field] = val;
+  updateMeta();
+  save();
+}
+
+function renderTabs() {
+  const wrap = document.getElementById("days-tabs");
+  wrap.innerHTML = DAYS.map(day => {
+    const d = weekData[day] || {};
+    const isActive = day === activeDay;
+    const isDone = d.completed;
+    const isRest = PLAN[day].rest;
+    let cls = "day-tab";
+    if (isActive) cls += " active";
+    else if (isDone) cls += " done";
+    const label = day.slice(0,3).toUpperCase() + (isRest ? " \uD83D\uDCA4" : isDone ? " \u2713" : "");
+    return `<button class="${cls}" onclick="setDay('${day}')">${label}</button>`;
+  }).join("");
+}
+
+function renderMain() {
+  const plan = PLAN[activeDay];
+  const d = getDay();
+  let html = `<div class="card">
+    <div class="card-header">
+      <div class="day-name">${activeDay.toUpperCase()}</div>
+      <div class="toggle-wrap">
+        <span class="toggle-lbl">Done?</span>
+        <button class="toggle ${d.completed ? 'on' : ''}" onclick="toggleDone()">
+          <div class="toggle-knob"></div>
+        </button>
+      </div>
+    </div>`;
+
+  if (plan.rest) {
+    html += `<p class="rest-msg">Rest day. Walk, recover, sleep.</p>`;
+  } else {
+    if (plan.run) {
+      html += `<div class="run-box">
+        <div class="run-type">&#127939; ${plan.run.type} &mdash; ${plan.run.distance} mi target</div>
+        <div class="run-note">${plan.run.notes}</div>
+        <div class="run-inputs">
+          <div><label class="field-label">Distance (mi)</label><input class="field-input" type="number" step="0.1" placeholder="1.5" value="${d.runDistance||''}" oninput="setField('runDistance',this.value)"></div>
+          <div><label class="field-label">Time (min)</label><input class="field-input" type="number" placeholder="18" value="${d.runTime||''}" oninput="setField('runTime',this.value)"></div>
+          <div><label class="field-label">Effort (1-10)</label><input class="field-input" type="number" min="1" max="10" placeholder="7" value="${d.runEffort||''}" oninput="setField('runEffort',this.value)"></div>
+        </div>
+      </div>`;
+    }
+
+    if (plan.workout) {
+      html += `<div class="section-label">&#128170; ${plan.workout.name}</div>
+      <table><thead><tr><th>Exercise</th><th>Target</th><th>Reps Done</th></tr></thead><tbody>`;
+      plan.workout.exercises.forEach((ex, i) => {
+        const repVal = (d.exercises && d.exercises[i]) || "";
+        html += `<tr>
+          <td><div class="ex-name">${ex.name}</div>${ex.note ? `<div class="ex-hint">${ex.note}</div>` : ''}</td>
+          <td class="ex-target">${ex.sets}&times;${ex.reps}</td>
+          <td><input type="text" placeholder="e.g. 8,6,5" value="${repVal}" oninput="setExercise(${i}, this.value)"></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    html += `<div class="feel-row">
+      <div><label class="field-label">How did you feel?</label><div class="chips">`;
+    FEELINGS.forEach(f => {
+      const sel = d.feeling === f ? " chip sel-feel" : "";
+      html += `<button class="chip${sel}" onclick="setField('feeling','${f}')">${f}</button>`;
+    });
+    html += `</div></div><div><label class="field-label">Pain/Soreness</label><div class="chips">`;
+    PAIN_LEVELS.forEach(p => {
+      const key = p.toLowerCase();
+      const sel = d.pain === p ? ` chip sel-${key === "moderate" ? "mod" : key === "severe" ? "sev" : key}` : "";
+      html += `<button class="chip${sel}" onclick="setField('pain','${p}')">${p}</button>`;
+    });
+    html += `</div></div></div>
+    <label class="field-label">Notes / aches / anything to flag</label>
+    <textarea class="notes-box" placeholder="e.g. left knee sore, push-ups felt strong..." oninput="setField('notes',this.value)">${d.notes||''}</textarea>`;
+
+}
+
+html += `</div>`;
+
+// Check-in box
+html += `<div class="checkin-box">
+<div class="checkin-title">📋 WEEKLY CHECK-IN</div>
+<div class="checkin-desc">End of week: tap the yellow button. It copies your log and opens Claude. Paste it in and say “here’s my week ${weekNum} data, reassess my plan.”</div>
+<div class="checkin-btns">
+<button class="btn-preview" onclick="toggleSummary()">PREVIEW LOG</button>
+<button class="btn-claude" onclick="sendToClaude()">COPY + OPEN CLAUDE →</button>
+</div>
+<div id="summary-wrap" class="${summaryVisible ? 'show' : ''}">
+<textarea id="summary-text" readonly>${generateSummary()}</textarea>
+<button class="btn-copy" id="copy-btn" onclick="copySummary()">COPY TO CLIPBOARD</button>
+</div>
+
+  </div>`;
+
+// Glance
+html += `<div class="glance-box"><div class="glance-title">Week at a Glance</div>`;
+DAYS.forEach(day => {
+html += `<div class="glance-row"><span class="glance-day">${day.slice(0,3)}</span><span class="glance-info">${GLANCE[day]}</span></div>`;
+});
+html += `</div>`;
+html += `<button class="clear-btn" onclick="clearWeek()">clear week ${weekNum} data</button>`;
+
+document.getElementById(“main”).innerHTML = html;
+}
+
+function toggleDone() {
+const d = getDay();
+setField(“completed”, !d.completed);
+renderTabs();
+renderMain();
+}
+
+function setExercise(i, val) {
+if (!weekData[activeDay]) weekData[activeDay] = {};
+const plan = PLAN[activeDay];
+if (!weekData[activeDay].exercises) weekData[activeDay].exercises = Array(plan.workout.exercises.length).fill(””);
+weekData[activeDay].exercises[i] = val;
+save();
+}
+
+function generateSummary() {
+let t = “===== WEEK “ + weekNum + “ CHECK-IN =====\n\n”;
+DAYS.forEach(day => {
+const d = weekData[day] || {};
+const p = PLAN[day];
+if (p.rest) { t += day.toUpperCase() + “: Rest day\n\n”; return; }
+t += day.toUpperCase() + “:\n”;
+t += “  Completed: “ + (d.completed ? “Yes” : “No”) + “\n”;
+if (p.run) t += “  Run: “ + (d.runDistance||”–”) + “mi in “ + (d.runTime||”–”) + “min, effort “ + (d.runEffort||”–”) + “/10\n”;
+if (p.workout) {
+t += “  Workout: “ + p.workout.name + “\n”;
+p.workout.exercises.forEach((ex, i) => {
+t += “    - “ + ex.name + “: “ + ((d.exercises && d.exercises[i]) || “not logged”) + “\n”;
+});
+}
+t += “  Feeling: “ + (d.feeling||”–”) + “ | Pain: “ + (d.pain||”–”) + “\n”;
+if (d.notes) t += “  Notes: “ + d.notes + “\n”;
+t += “\n”;
+});
+t += “===== END CHECK-IN =====\nPaste this to Claude at claude.ai for your weekly reassessment.”;
+return t;
+}
+
+function toggleSummary() {
+summaryVisible = !summaryVisible;
+const wrap = document.getElementById(“summary-wrap”);
+const btn = document.querySelector(”.btn-preview”);
+if (wrap) wrap.className = summaryVisible ? “show” : “”;
+if (btn) btn.textContent = summaryVisible ? “HIDE PREVIEW” : “PREVIEW LOG”;
+if (summaryVisible) {
+const ta = document.getElementById(“summary-text”);
+if (ta) ta.value = generateSummary();
+}
+}
+
+function copySummary() {
+const text = generateSummary();
+if (navigator.clipboard) {
+navigator.clipboard.writeText(text).then(() => {
+const btn = document.getElementById(“copy-btn”);
+if (btn) { btn.textContent = “COPIED!”; btn.classList.add(“copied”); setTimeout(() => { btn.textContent = “COPY TO CLIPBOARD”; btn.classList.remove(“copied”); }, 2000); }
+});
+} else {
+const ta = document.getElementById(“summary-text”);
+if (ta) { ta.select(); document.execCommand(“copy”); }
+}
+}
+
+function sendToClaude() {
+const text = generateSummary();
+if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
+window.open(“https://claude.ai”, “_blank”);
+}
+
+function clearWeek() {
+if (confirm(“Clear all data for Week “ + weekNum + “?”)) {
+weekData = {};
+try { localStorage.removeItem(“ft_data_” + weekNum); } catch(e) {}
+renderTabs();
+renderMain();
+updateMeta();
+}
+}
+
+load();
+</script>
+
+</body>
+</html>
